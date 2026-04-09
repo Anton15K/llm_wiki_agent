@@ -5,12 +5,17 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.TimeUnit
 import kotlin.io.path.nameWithoutExtension
 
 @Component
 class VideoExtractor(private val audioExtractor: AudioExtractor) : Extractor {
 
     private val log = LoggerFactory.getLogger(VideoExtractor::class.java)
+
+    companion object {
+        private const val FFMPEG_TIMEOUT_SEC = 300L // 5 minutes
+    }
 
     override fun extract(source: String): SourceDocument {
         return transcribe(Path.of(source), null)
@@ -30,7 +35,12 @@ class VideoExtractor(private val audioExtractor: AudioExtractor) : Extractor {
                 .start()
 
             val output = process.inputStream.bufferedReader().readText()
-            val exitCode = process.waitFor()
+            val finished = process.waitFor(FFMPEG_TIMEOUT_SEC, TimeUnit.SECONDS)
+            if (!finished) {
+                process.destroyForcibly()
+                throw RuntimeException("ffmpeg timed out after ${FFMPEG_TIMEOUT_SEC}s for: $videoPath")
+            }
+            val exitCode = process.exitValue()
             if (exitCode != 0) {
                 throw RuntimeException("ffmpeg failed (exit $exitCode): $output")
             }

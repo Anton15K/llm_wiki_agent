@@ -72,6 +72,9 @@ class ExtractionService(
             appendLine("type: ${doc.type}")
             appendLine("extracted: ${Instant.now()}")
             appendLine("word_count: ${doc.wordCount}")
+            if (doc.links.isNotEmpty()) {
+                appendLine("link_count: ${doc.links.size}")
+            }
             for ((k, v) in doc.metadata) {
                 appendLine("$k: $v")
             }

@@ -7,4 +7,7 @@ data class SourceDocument(
     val type: String,
     val wordCount: Int = content.split("\\s+".toRegex()).size,
     val metadata: Map<String, String> = emptyMap(),
-)
+    val links: List<Link> = emptyList(),
+) {
+    data class Link(val text: String, val url: String)
+}

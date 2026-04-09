@@ -1,12 +1,25 @@
 package com.wiki.agent.tool
 
 import com.wiki.agent.service.ExtractionService
+import org.slf4j.LoggerFactory
 import org.springframework.ai.tool.annotation.Tool
 import org.springframework.ai.tool.annotation.ToolParam
 import org.springframework.stereotype.Component
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 @Component
 class ExtractionTools(private val extractionService: ExtractionService) {
+
+    private val log = LoggerFactory.getLogger(ExtractionTools::class.java)
+    private val executor = Executors.newCachedThreadPool()
+
+    companion object {
+        private const val EXTRACT_TIMEOUT_SEC = 120L
+        private const val TRANSCRIBE_TIMEOUT_SEC = 600L
+    }
 
     @Tool(
         name = "wiki_extract",
@@ -16,8 +29,21 @@ class ExtractionTools(private val extractionService: ExtractionService) {
         @ToolParam(description = "Source to extract: URL (https://...), file path to PDF (.pdf), or text file (.md/.txt)") source: String,
         @ToolParam(description = "Force source type: 'url', 'pdf', or 'text'. Auto-detected if omitted.", required = false) type: String?,
     ): String {
-        val doc = extractionService.extract(source, type)
-        return formatResult(doc.title, doc.type, doc.wordCount, doc.source, doc.content)
+        return runWithTimeout(EXTRACT_TIMEOUT_SEC, "extract($source)") {
+            val doc = extractionService.extract(source, type)
+
+            buildString {
+                appendLine("Title: ${doc.title}")
+                appendLine("Type: ${doc.type}")
+                appendLine("Words: ${doc.wordCount}")
+                appendLine("Source: ${doc.source}")
+                if (doc.links.isNotEmpty()) {
+                    appendLine("Links found: ${doc.links.size}")
+                }
+                appendLine()
+                append(doc.content)
+            }
+        }
     }
 
     @Tool(
@@ -28,17 +54,32 @@ class ExtractionTools(private val extractionService: ExtractionService) {
         @ToolParam(description = "Path to audio file (.mp3, .wav, .m4a, .ogg) or video file (.mp4, .mkv, .webm)") filePath: String,
         @ToolParam(description = "Language code (e.g. 'en', 'es', 'de'). Auto-detected if omitted.", required = false) language: String?,
     ): String {
-        val doc = extractionService.transcribe(filePath, language)
-        return formatResult(doc.title, doc.type, doc.wordCount, doc.source, doc.content)
+        return runWithTimeout(TRANSCRIBE_TIMEOUT_SEC, "transcribe($filePath)") {
+            val doc = extractionService.transcribe(filePath, language)
+
+            buildString {
+                appendLine("Title: ${doc.title}")
+                appendLine("Type: ${doc.type}")
+                appendLine("Words: ${doc.wordCount}")
+                appendLine("Source: ${doc.source}")
+                appendLine()
+                append(doc.content)
+            }
+        }
     }
 
-    private fun formatResult(title: String, type: String, wordCount: Int, source: String, content: String): String =
-        buildString {
-            appendLine("Title: $title")
-            appendLine("Type: $type")
-            appendLine("Words: $wordCount")
-            appendLine("Source: $source")
-            appendLine()
-            append(content)
+    private fun runWithTimeout(timeoutSec: Long, operation: String, block: () -> String): String {
+        val future = executor.submit(Callable { block() })
+        return try {
+            future.get(timeoutSec, TimeUnit.SECONDS)
+        } catch (e: TimeoutException) {
+            future.cancel(true)
+            log.error("Operation timed out after {}s: {}", timeoutSec, operation)
+            "ERROR: Operation timed out after ${timeoutSec}s — $operation"
+        } catch (e: Exception) {
+            val cause = e.cause ?: e
+            log.error("Operation failed: {} — {}", operation, cause.message, cause)
+            "ERROR: ${cause.message}"
         }
+    }
 }

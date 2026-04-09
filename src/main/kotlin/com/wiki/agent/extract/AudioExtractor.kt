@@ -9,6 +9,7 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.nio.file.Path
+import java.time.Duration
 import java.util.UUID
 import kotlin.io.path.name
 import kotlin.io.path.nameWithoutExtension
@@ -18,7 +19,13 @@ import kotlin.io.path.readBytes
 class AudioExtractor(private val props: WikiProperties) : Extractor {
 
     private val log = LoggerFactory.getLogger(AudioExtractor::class.java)
-    private val client = HttpClient.newHttpClient()
+    private val client = HttpClient.newBuilder()
+        .connectTimeout(Duration.ofSeconds(30))
+        .build()
+
+    companion object {
+        private val REQUEST_TIMEOUT: Duration = Duration.ofMinutes(5)
+    }
 
     override fun extract(source: String): SourceDocument {
         return transcribe(Path.of(source), null)
@@ -38,6 +45,7 @@ class AudioExtractor(private val props: WikiProperties) : Extractor {
             .uri(URI.create("https://api.openai.com/v1/audio/transcriptions"))
             .header("Authorization", "Bearer $apiKey")
             .header("Content-Type", "multipart/form-data; boundary=$boundary")
+            .timeout(REQUEST_TIMEOUT)
             .POST(HttpRequest.BodyPublishers.ofByteArray(body))
             .build()
 
