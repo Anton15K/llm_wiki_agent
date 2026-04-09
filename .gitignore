@@ -11,8 +11,11 @@ build/
 
 # Runtime
 logs/
+raw/*
+!raw/assets/
 raw/assets/*
 !raw/assets/.gitkeep
+wiki/**
 
 # OS
 .DS_Store
