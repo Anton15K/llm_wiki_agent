@@ -1,9 +1,11 @@
 package com.wiki.agent.service
 
 import com.wiki.agent.config.WikiProperties
+import com.wiki.agent.extract.AudioExtractor
 import com.wiki.agent.extract.PdfExtractor
 import com.wiki.agent.extract.TextExtractor
 import com.wiki.agent.extract.UrlExtractor
+import com.wiki.agent.extract.VideoExtractor
 import com.wiki.agent.model.SourceDocument
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -17,6 +19,8 @@ class ExtractionService(
     private val urlExtractor: UrlExtractor,
     private val pdfExtractor: PdfExtractor,
     private val textExtractor: TextExtractor,
+    private val audioExtractor: AudioExtractor,
+    private val videoExtractor: VideoExtractor,
 ) {
 
     private val log = LoggerFactory.getLogger(ExtractionService::class.java)
@@ -30,6 +34,21 @@ class ExtractionService(
             "pdf" -> pdfExtractor.extract(source)
             "text" -> textExtractor.extract(source)
             else -> throw IllegalArgumentException("Unsupported source type: $resolvedType")
+        }
+
+        saveRaw(doc)
+        return doc
+    }
+
+    fun transcribe(filePath: String, language: String?): SourceDocument {
+        val path = java.nio.file.Path.of(filePath)
+        val isVideo = filePath.matches(Regex(".*\\.(mp4|mkv|webm|avi|mov)$", RegexOption.IGNORE_CASE))
+        log.info("Transcribing file='{}' isVideo={}", filePath, isVideo)
+
+        val doc = if (isVideo) {
+            videoExtractor.transcribe(path, language)
+        } else {
+            audioExtractor.transcribe(path, language)
         }
 
         saveRaw(doc)

@@ -1,9 +1,11 @@
 package com.wiki.agent.service
 
 import com.wiki.agent.config.WikiProperties
+import com.wiki.agent.extract.AudioExtractor
 import com.wiki.agent.extract.PdfExtractor
 import com.wiki.agent.extract.TextExtractor
 import com.wiki.agent.extract.UrlExtractor
+import com.wiki.agent.extract.VideoExtractor
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -27,7 +29,9 @@ class ExtractionServiceTest {
             wikiPath = tempDir.resolve("wiki"),
             rawPath = tempDir.resolve("raw"),
         )
-        service = ExtractionService(props, UrlExtractor(), PdfExtractor(), TextExtractor())
+        val audioExtractor = AudioExtractor(props)
+        val videoExtractor = VideoExtractor(audioExtractor)
+        service = ExtractionService(props, UrlExtractor(), PdfExtractor(), TextExtractor(), audioExtractor, videoExtractor)
     }
 
     @Test

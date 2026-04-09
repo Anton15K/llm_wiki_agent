@@ -17,13 +17,28 @@ class ExtractionTools(private val extractionService: ExtractionService) {
         @ToolParam(description = "Force source type: 'url', 'pdf', or 'text'. Auto-detected if omitted.", required = false) type: String?,
     ): String {
         val doc = extractionService.extract(source, type)
-        return buildString {
-            appendLine("Title: ${doc.title}")
-            appendLine("Type: ${doc.type}")
-            appendLine("Words: ${doc.wordCount}")
-            appendLine("Source: ${doc.source}")
-            appendLine()
-            append(doc.content)
-        }
+        return formatResult(doc.title, doc.type, doc.wordCount, doc.source, doc.content)
     }
+
+    @Tool(
+        name = "wiki_transcribe",
+        description = "Transcribe audio or video files using OpenAI Whisper API. For video files, audio is extracted via ffmpeg first. Saves transcript to raw/ directory. Requires OPENAI_API_KEY."
+    )
+    fun transcribe(
+        @ToolParam(description = "Path to audio file (.mp3, .wav, .m4a, .ogg) or video file (.mp4, .mkv, .webm)") filePath: String,
+        @ToolParam(description = "Language code (e.g. 'en', 'es', 'de'). Auto-detected if omitted.", required = false) language: String?,
+    ): String {
+        val doc = extractionService.transcribe(filePath, language)
+        return formatResult(doc.title, doc.type, doc.wordCount, doc.source, doc.content)
+    }
+
+    private fun formatResult(title: String, type: String, wordCount: Int, source: String, content: String): String =
+        buildString {
+            appendLine("Title: $title")
+            appendLine("Type: $type")
+            appendLine("Words: $wordCount")
+            appendLine("Source: $source")
+            appendLine()
+            append(content)
+        }
 }
