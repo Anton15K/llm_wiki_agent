@@ -1,0 +1,22 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.fleet/
+
+# Runtime
+logs/
+raw/assets/*
+!raw/assets/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
