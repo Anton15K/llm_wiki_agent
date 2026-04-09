@@ -2,7 +2,7 @@
 
 A personal knowledge management system that turns raw sources — URLs, PDFs, audio, video — into an interlinked wiki. Built as an MCP server in Kotlin + Spring Boot, it pairs with Claude Code: the server is the toolkit, Claude is the brain.
 
-Inspired by [Andrej Karpathy's pattern](https://x.com/karpathy/status/1882188384898441488) of using LLMs to incrementally build a personal wiki instead of RAG.
+Inspired by [Andrej Karpathy's pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) of using LLMs to incrementally build a personal wiki instead of RAG.
 
 ## How It Works
 
