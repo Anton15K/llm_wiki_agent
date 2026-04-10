@@ -1,6 +1,5 @@
 package com.wiki.agent.service
 
-import com.wiki.agent.config.WikiProperties
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.nio.file.Files
@@ -11,17 +10,17 @@ import java.time.format.DateTimeFormatter
 import kotlin.io.path.*
 
 @Service
-class WikiService(private val props: WikiProperties) {
+class WikiService(private val storageService: WikiStorageService) {
 
     private val log = LoggerFactory.getLogger(WikiService::class.java)
-    private val wikiDir: Path get() = props.wikiPath
-    private val rawDir: Path get() = props.rawPath
+    private val wikiDir: Path get() = storageService.activeWikiPath()
+    private val rawDir: Path get() = storageService.activeRawPath()
 
     init {
-        Files.createDirectories(wikiDir)
-        Files.createDirectories(rawDir)
-        log.info("Wiki directory: {}", wikiDir.toAbsolutePath())
-        log.info("Raw directory: {}", rawDir.toAbsolutePath())
+        Files.createDirectories(storageService.activeWikiPath())
+        Files.createDirectories(storageService.activeRawPath())
+        log.info("Wiki directory: {}", storageService.activeWikiPath().toAbsolutePath())
+        log.info("Raw directory: {}", storageService.activeRawPath().toAbsolutePath())
     }
 
     // --- Page CRUD ---

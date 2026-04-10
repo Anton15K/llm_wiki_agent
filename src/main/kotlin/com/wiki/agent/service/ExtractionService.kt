@@ -1,6 +1,5 @@
 package com.wiki.agent.service
 
-import com.wiki.agent.config.WikiProperties
 import com.wiki.agent.extract.AudioExtractor
 import com.wiki.agent.extract.PdfExtractor
 import com.wiki.agent.extract.TextExtractor
@@ -15,7 +14,7 @@ import kotlin.io.path.writeText
 
 @Service
 class ExtractionService(
-    private val props: WikiProperties,
+    private val storageService: WikiStorageService,
     private val urlExtractor: UrlExtractor,
     private val pdfExtractor: PdfExtractor,
     private val textExtractor: TextExtractor,
@@ -63,9 +62,10 @@ class ExtractionService(
     }
 
     private fun saveRaw(doc: SourceDocument) {
-        Files.createDirectories(props.rawPath)
+        val rawPath = storageService.activeRawPath()
+        Files.createDirectories(rawPath)
         val filename = sanitizeFilename(doc.title) + "-${Instant.now().epochSecond}.md"
-        val rawFile = props.rawPath.resolve(filename)
+        val rawFile = rawPath.resolve(filename)
         val rawContent = buildString {
             appendLine("---")
             appendLine("source: ${doc.source}")

@@ -7,5 +7,6 @@ import java.nio.file.Path
 data class WikiProperties(
     val wikiPath: Path = Path.of("./wiki"),
     val rawPath: Path = Path.of("./raw"),
+    val storagesPath: Path = Path.of("./storages"),
     val openaiApiKey: String = "",
 )

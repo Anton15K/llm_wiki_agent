@@ -12,6 +12,7 @@ spring:
 wiki:
   wiki-path: ${WIKI_PATH:./wiki}
   raw-path: ${RAW_PATH:./raw}
+  storages-path: ${STORAGES_PATH:./storages}
   openai-api-key: ${OPENAI_API_KEY:}
 
 logging:

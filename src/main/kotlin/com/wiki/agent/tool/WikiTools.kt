@@ -1,6 +1,7 @@
 package com.wiki.agent.tool
 
 import com.wiki.agent.service.WikiService
+import com.wiki.agent.service.WikiStorageService
 import org.slf4j.LoggerFactory
 import org.springframework.ai.tool.annotation.Tool
 import org.springframework.ai.tool.annotation.ToolParam
@@ -11,7 +12,10 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
 @Component
-class WikiTools(private val wikiService: WikiService) {
+class WikiTools(
+    private val wikiService: WikiService,
+    private val storageService: WikiStorageService,
+) {
 
     private val log = LoggerFactory.getLogger(WikiTools::class.java)
     private val executor = Executors.newCachedThreadPool()
@@ -59,6 +63,22 @@ class WikiTools(private val wikiService: WikiService) {
 
     @Tool(name = "wiki_status", description = "Get wiki status: page count, raw source count, last log entry, and wiki size.")
     fun status(): String = runWithTimeout("status") { wikiService.status() }
+
+    @Tool(name = "wiki_create_storage", description = "Create a new named wiki storage. Name must be lowercase letters, numbers, and hyphens (e.g. 'work-notes', 'project2'). Does not switch to it automatically.")
+    fun createStorage(
+        @ToolParam(description = "Storage name (lowercase, hyphens allowed, e.g. 'work-notes')") name: String,
+    ): String = runWithTimeout("createStorage($name)") { storageService.createStorage(name) }
+
+    @Tool(name = "wiki_list_storages", description = "List all available wiki storages. Shows which one is currently active.")
+    fun listStorages(): String = runWithTimeout("listStorages") { storageService.listStorages() }
+
+    @Tool(name = "wiki_use_storage", description = "Switch the active wiki storage. All subsequent wiki operations will use this storage. The storage must already exist.")
+    fun useStorage(
+        @ToolParam(description = "Storage name to switch to (use 'default' for the main wiki)") name: String,
+    ): String = runWithTimeout("useStorage($name)") { storageService.useStorage(name) }
+
+    @Tool(name = "wiki_current_storage", description = "Show the currently active wiki storage name and its path.")
+    fun currentStorage(): String = runWithTimeout("currentStorage") { storageService.currentStorage() }
 
     private fun runWithTimeout(operation: String, block: () -> String): String {
         val future = executor.submit(Callable { block() })

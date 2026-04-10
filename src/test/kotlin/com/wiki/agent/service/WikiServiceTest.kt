@@ -18,9 +18,12 @@ class WikiServiceTest {
 
     @BeforeEach
     fun setUp() {
-        val wikiPath = tempDir.resolve("wiki")
-        val rawPath = tempDir.resolve("raw")
-        service = WikiService(WikiProperties(wikiPath, rawPath))
+        val props = WikiProperties(
+            wikiPath = tempDir.resolve("wiki"),
+            rawPath = tempDir.resolve("raw"),
+            storagesPath = tempDir.resolve("storages"),
+        )
+        service = WikiService(WikiStorageService(props))
     }
 
     @Test
@@ -78,10 +81,9 @@ class WikiServiceTest {
 
     @Test
     fun `append log`() {
-        // Create log.md first
         service.updateIndex("---\ntitle: Index\n---\n# Index")
-        val wikiPath = tempDir.resolve("wiki")
-        wikiPath.resolve("log.md").toFile().writeText("| Timestamp | Op | Subject | Details |\n|---|---|---|---|")
+        tempDir.resolve("wiki").resolve("log.md").toFile()
+            .writeText("| Timestamp | Op | Subject | Details |\n|---|---|---|---|")
         val result = service.appendLog("create", "test-page", "test details")
         assertContains(result, "create")
     }

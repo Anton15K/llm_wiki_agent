@@ -28,10 +28,12 @@ class ExtractionServiceTest {
         val props = WikiProperties(
             wikiPath = tempDir.resolve("wiki"),
             rawPath = tempDir.resolve("raw"),
+            storagesPath = tempDir.resolve("storages"),
         )
+        val storageService = WikiStorageService(props)
         val audioExtractor = AudioExtractor(props)
         val videoExtractor = VideoExtractor(audioExtractor)
-        service = ExtractionService(props, UrlExtractor(), PdfExtractor(), TextExtractor(), audioExtractor, videoExtractor)
+        service = ExtractionService(storageService, UrlExtractor(), PdfExtractor(), TextExtractor(), audioExtractor, videoExtractor)
     }
 
     @Test
