@@ -24,7 +24,7 @@ class WikiTools(
         private const val TOOL_TIMEOUT_SEC = 30L
     }
 
-    @Tool(name = "wiki_write_page", description = "Create or overwrite a wiki page. Path should be kebab-case .md filename (e.g. 'machine-learning-basics.md'). Content should include YAML frontmatter.")
+    @Tool(name = "wiki_write_page", description = "Create or overwrite a wiki page. Path should be kebab-case .md filename (e.g. 'machine-learning-basics.md'). Content must include YAML frontmatter with at minimum: title, tags. When the page was derived from an external source (URL, PDF, audio/video), frontmatter must also include: source (the original URL or file path), source_type ('url', 'pdf', 'audio', 'video').")
     fun writePage(
         @ToolParam(description = "Page filename (e.g. 'machine-learning-basics.md')") path: String,
         @ToolParam(description = "Full page content including YAML frontmatter") content: String,

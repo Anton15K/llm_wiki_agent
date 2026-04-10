@@ -23,7 +23,7 @@ class ExtractionTools(private val extractionService: ExtractionService) {
 
     @Tool(
         name = "wiki_extract",
-        description = "Extract content from a URL, PDF file, or text file. Auto-detects type from the source string (URLs start with http, PDFs end in .pdf, otherwise text). Saves raw extraction to raw/ directory. Returns extracted text content with metadata."
+        description = "Extract content from a URL, PDF file, or text file. Auto-detects type from the source string (URLs start with http, PDFs end in .pdf, otherwise text). Saves raw extraction to raw/ directory. Returns extracted content and a suggested frontmatter block — use it as-is when calling wiki_write_page so that the source URL is preserved in the page metadata."
     )
     fun extract(
         @ToolParam(description = "Source to extract: URL (https://...), file path to PDF (.pdf), or text file (.md/.txt)") source: String,
@@ -33,14 +33,17 @@ class ExtractionTools(private val extractionService: ExtractionService) {
             val doc = extractionService.extract(source, type)
 
             buildString {
-                appendLine("Title: ${doc.title}")
-                appendLine("Type: ${doc.type}")
-                appendLine("Words: ${doc.wordCount}")
-                appendLine("Source: ${doc.source}")
-                if (doc.links.isNotEmpty()) {
-                    appendLine("Links found: ${doc.links.size}")
-                }
+                appendLine("=== Suggested frontmatter (use when writing the wiki page) ===")
+                appendLine("---")
+                appendLine("title: ${doc.title}")
+                appendLine("source: ${doc.source}")
+                appendLine("source_type: ${doc.type}")
+                appendLine("word_count: ${doc.wordCount}")
+                if (doc.links.isNotEmpty()) appendLine("link_count: ${doc.links.size}")
+                appendLine("tags: []")
+                appendLine("---")
                 appendLine()
+                appendLine("=== Extracted content ===")
                 append(doc.content)
             }
         }
@@ -48,7 +51,7 @@ class ExtractionTools(private val extractionService: ExtractionService) {
 
     @Tool(
         name = "wiki_transcribe",
-        description = "Transcribe audio or video files using OpenAI Whisper API. For video files, audio is extracted via ffmpeg first. Saves transcript to raw/ directory. Requires OPENAI_API_KEY."
+        description = "Transcribe audio or video files using OpenAI Whisper API. For video files, audio is extracted via ffmpeg first. Saves transcript to raw/ directory. Requires OPENAI_API_KEY. Returns transcript and a suggested frontmatter block — use it as-is when calling wiki_write_page so that the source file path is preserved in the page metadata."
     )
     fun transcribe(
         @ToolParam(description = "Path to audio file (.mp3, .wav, .m4a, .ogg) or video file (.mp4, .mkv, .webm)") filePath: String,
@@ -58,11 +61,16 @@ class ExtractionTools(private val extractionService: ExtractionService) {
             val doc = extractionService.transcribe(filePath, language)
 
             buildString {
-                appendLine("Title: ${doc.title}")
-                appendLine("Type: ${doc.type}")
-                appendLine("Words: ${doc.wordCount}")
-                appendLine("Source: ${doc.source}")
+                appendLine("=== Suggested frontmatter (use when writing the wiki page) ===")
+                appendLine("---")
+                appendLine("title: ${doc.title}")
+                appendLine("source: ${doc.source}")
+                appendLine("source_type: ${doc.type}")
+                appendLine("word_count: ${doc.wordCount}")
+                appendLine("tags: []")
+                appendLine("---")
                 appendLine()
+                appendLine("=== Transcript ===")
                 append(doc.content)
             }
         }
