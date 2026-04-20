@@ -105,9 +105,7 @@ class WikiService(private val storageService: WikiStorageService) {
             rawDir.listDirectoryEntries("*").count { it.isRegularFile() }
         } else 0
         val logPath = wikiDir.resolve("log.md")
-        val lastLog = if (logPath.exists()) {
-            logPath.readLines().lastOrNull { it.startsWith("|") && !it.contains("---") } ?: "No entries"
-        } else "No log file"
+        val lastLog = if (logPath.exists()) tailLog(logPath) else "No log file"
         val wikiSize = wikiDir.listDirectoryEntries("*.md").sumOf { it.fileSize() }
         return """
             |Pages: $pageCount
@@ -124,13 +122,32 @@ class WikiService(private val storageService: WikiStorageService) {
         return wikiDir.resolve(safeName)
     }
 
+    // Read only first 30 lines — title is always in frontmatter near the top
     private fun extractTitle(page: Path): String {
-        val lines = page.readLines()
-        for (line in lines) {
-            if (line.startsWith("title:")) {
-                return line.substringAfter("title:").trim()
+        page.bufferedReader().use { reader ->
+            var lineCount = 0
+            while (lineCount < 30) {
+                val line = reader.readLine() ?: break
+                if (line.startsWith("title:")) return line.substringAfter("title:").trim()
+                lineCount++
             }
         }
         return page.nameWithoutExtension
+    }
+
+    // Read last chunk of the log file instead of loading it all into memory
+    private fun tailLog(path: Path): String {
+        val fileSize = path.fileSize()
+        if (fileSize == 0L) return "No entries"
+        val chunkSize = minOf(fileSize, 4096L)
+        val bytes = ByteArray(chunkSize.toInt())
+        java.io.RandomAccessFile(path.toFile(), "r").use { raf ->
+            raf.seek(fileSize - chunkSize)
+            raf.readFully(bytes)
+        }
+        return bytes.toString(Charsets.UTF_8)
+            .lines()
+            .lastOrNull { it.startsWith("|") && !it.contains("---") }
+            ?: "No entries"
     }
 }

@@ -1,6 +1,7 @@
 package com.wiki.agent.tool
 
 import com.wiki.agent.service.ExtractionService
+import jakarta.annotation.PreDestroy
 import org.slf4j.LoggerFactory
 import org.springframework.ai.tool.annotation.Tool
 import org.springframework.ai.tool.annotation.ToolParam
@@ -14,7 +15,12 @@ import java.util.concurrent.TimeoutException
 class ExtractionTools(private val extractionService: ExtractionService) {
 
     private val log = LoggerFactory.getLogger(ExtractionTools::class.java)
-    private val executor = Executors.newCachedThreadPool()
+    private val executor = Executors.newVirtualThreadPerTaskExecutor()
+
+    @PreDestroy
+    fun shutdown() {
+        executor.shutdownNow()
+    }
 
     companion object {
         private const val EXTRACT_TIMEOUT_SEC = 120L

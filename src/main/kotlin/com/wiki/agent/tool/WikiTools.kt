@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.ai.tool.annotation.Tool
 import org.springframework.ai.tool.annotation.ToolParam
 import org.springframework.stereotype.Component
+import jakarta.annotation.PreDestroy
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -18,10 +19,16 @@ class WikiTools(
 ) {
 
     private val log = LoggerFactory.getLogger(WikiTools::class.java)
-    private val executor = Executors.newCachedThreadPool()
+    // Virtual threads (Java 21): interrupts actually unblock file I/O, so cancel(true) works
+    private val executor = Executors.newVirtualThreadPerTaskExecutor()
 
     companion object {
-        private const val TOOL_TIMEOUT_SEC = 30L
+        private const val TOOL_TIMEOUT_SEC = 10L
+    }
+
+    @PreDestroy
+    fun shutdown() {
+        executor.shutdownNow()
     }
 
     @Tool(name = "wiki_write_page", description = "Create or overwrite a wiki page. Path should be kebab-case .md filename (e.g. 'machine-learning-basics.md'). Content must include YAML frontmatter with at minimum: title, tags. When the page was derived from an external source (URL, PDF, audio/video), frontmatter must also include: source (the original URL or file path), source_type ('url', 'pdf', 'audio', 'video').")
